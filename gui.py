@@ -86,7 +86,8 @@ class MainWindow(object):
     def update(self):
         """
         Updates the window state.
-        Returns True on success or False to indicate the application should quit.
+        Returns True on success or False to indicate the application should
+        quit.
         """
         if self._quitstate:
             return False
