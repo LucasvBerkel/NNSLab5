@@ -3,6 +3,8 @@
 ## STUDENT ID:
 import sys
 import struct
+import select
+import time
 from socket import *
 from random import randint
 from gui import MainWindow
@@ -56,9 +58,20 @@ def main(mcast_addr,
     window.writeln('my position is (%s, %s)' % sensor_pos)
     window.writeln('my sensor value is %s' % sensor_val)
 
+    message = "Hello"
+    enc_message = message_encode(1, 0, sensor_pos, [1, 3])
+
+
+    peer.sendto(enc_message, mcast_addr)
+
     # -- This is the event loop. --
     while window.update():
-        pass
+        [rlist, wlist, xlist] = select.select([mcast], [], [])
+        for sock in rlist:
+            data, address = sock.recvfrom(512)
+            dec_message = message_decode(data)
+            window.writeln(str(dec_message))
+        time.sleep(1)
 
 
 # -- program entry point --
