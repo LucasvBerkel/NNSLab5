@@ -5,6 +5,7 @@ import sys
 import struct
 import select
 import time
+import numpy as np
 from socket import *
 from random import randint
 from gui import MainWindow
@@ -58,21 +59,36 @@ def main(mcast_addr,
     window.writeln('my position is (%s, %s)' % sensor_pos)
     window.writeln('my sensor value is %s' % sensor_val)
 
-    message = "Hello"
-    enc_message = message_encode(1, 0, sensor_pos, [1, 3])
-
-
+    enc_message = message_encode(0, 0, sensor_pos, [1, 3])
     peer.sendto(enc_message, mcast_addr)
 
+    neighbors = []
     # -- This is the event loop. --
     while window.update():
-        [rlist, wlist, xlist] = select.select([mcast], [], [])
-        for sock in rlist:
-            data, address = sock.recvfrom(512)
-            dec_message = message_decode(data)
-            window.writeln(str(dec_message))
-        time.sleep(1)
+        [rlist, wlist, xlist] = select.select([mcast], [], [], 0)
 
+        # add neighbors to list
+        for neighbor_socket in rlist:
+            data, address = neighbor_socket.recvfrom(512)
+            dec_message = message_decode(data)
+            if dec_message[0] == 0:
+                pos_init = dec_message[2]
+                distance = getDistance(pos_init, sensor_pos)
+                if distance > sensor_range:
+                    enc_message = message_encode(1, 0, pos_init, sensor_pos)
+                    peer.sendto(enc_message, address)
+            if dec_message[0] == 1:
+                neighbors.append([address, dec_message[3]])
+                print("neighbours", neighbors)
+        line = window.getline()
+        if line == "move":
+            sensor_pos = random_position(sensor_range)
+            window.writeln(str(sensor_pos))
+        time.sleep(0.1)
+
+def getDistance(pos1, pos2):
+    return np.sqrt(np.power(pos1[0] - pos2[0], 2) + np.power(pos1[1] - pos2[1], 2))
+        
 
 # -- program entry point --
 if __name__ == '__main__':
