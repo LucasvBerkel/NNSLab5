@@ -59,35 +59,59 @@ def main(mcast_addr,
     window.writeln('my position is (%s, %s)' % sensor_pos)
     window.writeln('my sensor value is %s' % sensor_val)
 
-    enc_message = message_encode(0, 0, sensor_pos, [1, 3])
-    peer.sendto(enc_message, mcast_addr)
+    sendNeighbourPing(peer, mcast_addr, sensor_pos, sensor_range)
 
-    neighbors = []
+    neighbours = []
     # -- This is the event loop. --
     while window.update():
-        [rlist, wlist, xlist] = select.select([mcast], [], [], 0)
+        [rlist, wlist, xlist] = select.select([mcast, peer], [], [], 0)
 
         # add neighbors to list
         for neighbor_socket in rlist:
             data, address = neighbor_socket.recvfrom(512)
             dec_message = message_decode(data)
+            print dec_message
             if dec_message[0] == 0:
                 pos_init = dec_message[2]
                 distance = getDistance(pos_init, sensor_pos)
-                if distance > sensor_range:
+                if distance == 0:
+                    continue
+                elif distance < dec_message[5]:
                     enc_message = message_encode(1, 0, pos_init, sensor_pos)
                     peer.sendto(enc_message, address)
-            if dec_message[0] == 1:
-                neighbors.append([address, dec_message[3]])
-                print("neighbours", neighbors)
+            elif dec_message[0] == 1:
+                neighbours.append([address, dec_message[3]])
         line = window.getline()
-        if line == "move":
-            sensor_pos = random_position(sensor_range)
-            window.writeln(str(sensor_pos))
+        subParts = line.split(" ")
+        if subParts[0] == "move":
+            sensor_pos = random_position(grid_size)
+            window.writeln('my new position is (%s, %s)' % sensor_pos)
+            neighbours = []
+            sendNeighbourPing(peer, mcast_addr, sensor_pos, sensor_range)
+        elif subParts[0] == "list":
+            if neighbours == []:
+                window.writeln("You have no known neighbours")
+            else:
+                for neighbour in neighbours:
+                    window.writeln("Ip: " + str(neighbour[0]))
+                    window.writeln("Port: " + str(neighbour[1]))
+                    window.writeln("")
+        elif subParts[0] == "set":
+            if int(subParts[1]) >= 20 and int(subParts[1]) <= 70 and (int(subParts[1]) % 10) == 0:
+                sensor_range = int(subParts[1])
+                neighbours = []
+                sendNeighbourPing(peer, mcast_addr, sensor_pos, sensor_range)
+            else:
+                window.writeln("Range need to be between 20 and 70(with steps of 10)") 
+
         time.sleep(0.1)
 
 def getDistance(pos1, pos2):
     return np.sqrt(np.power(pos1[0] - pos2[0], 2) + np.power(pos1[1] - pos2[1], 2))
+
+def sendNeighbourPing(peer, mcast_addr, sPos, sRange):
+    enc_message = message_encode(0, 0, sPos, (0,0), 0, sRange, 0)
+    peer.sendto(enc_message, mcast_addr)
         
 
 # -- program entry point --
@@ -95,7 +119,7 @@ if __name__ == '__main__':
     import argparse
     p = argparse.ArgumentParser()
     p.add_argument('--group', help='multicast group', default='224.1.1.1')
-    p.add_argument('--port', help='multicast port', default=50000, type=int)
+    p.add_argument('--port', help='multicast port', default=50100, type=int)
     p.add_argument('--pos', help='x,y sensor position', default=None)
     p.add_argument('--grid', help='size of grid', default=100, type=int)
     p.add_argument('--range', help='sensor range', default=50, type=int)
