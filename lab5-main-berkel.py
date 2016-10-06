@@ -63,6 +63,7 @@ def main(mcast_addr,
 
     neighbours = []
     timeCounter = 0
+    sequenceNumber = 0
     REFRESHNEIGHBOUR = 50
     # -- This is the event loop. --
     while window.update():
@@ -109,7 +110,7 @@ def main(mcast_addr,
             else:
                 window.writeln("Range need to be between 20 and 70(with steps of 10)") 
         elif subParts[0] == "echo":
-            initiateEcho(peer, neighbours, sensor_pos, sensor_range)
+            sequenceNumber = initiateEcho(peer, neighbours, sensor_pos, sequenceNumber)
 
         time.sleep(0.1)
         timeCounter += 1
@@ -118,10 +119,12 @@ def main(mcast_addr,
             getNeighbours(peer, mcast_addr, sensor_pos, sensor_range)
             timeCounter = 0
 
-def initiateEcho(peer, neighbours, sensor_pos, sensor_range):
+def initiateEcho(peer, neighbours, sensor_pos, sequenceNumber):
     for neighbour in neighbours:
-        message = message_encode(2, 0, sensor_pos, neighbour[1], 0, 0, 0)
+        message = message_encode(2, sequenceNumber, sensor_pos, neighbour[1], 0, 0, 0)
         peer.sendto(message, neighbour[0])
+    sequenceNumber += 1
+    return sequenceNumber
 
 def getDistance(pos1, pos2):
     return np.sqrt(np.power(pos1[0] - pos2[0], 2) + np.power(pos1[1] - pos2[1], 2))
