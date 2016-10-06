@@ -65,6 +65,7 @@ def main(mcast_addr,
     timeCounter = 0
     sequenceNumber = 0
     REFRESHNEIGHBOUR = 50
+    echo_log = {}
     # -- This is the event loop. --
     while window.update():
         [rlist, wlist, xlist] = select.select([mcast, peer], [], [], 0)
@@ -84,6 +85,26 @@ def main(mcast_addr,
                     peer.sendto(enc_message, address)
             elif dec_message[0] == 1:
                 neighbours.append([address, dec_message[3]])
+            elif dec_message[0] == 2:
+                if len(neighbours) == 1 or echo_log[str(dec_message[1]) + str(dec_message[2])]:
+                    send_echo_reply(peer, dec_message[1], dec_message[2], address)
+                echo_log[str(dec_message[1]) + str(dec_message[2])] = []
+                echo_log[str(dec_message[1]) + str(dec_message[2])].append(len(neighbours) - 1)
+                echo_log[str(dec_message[1]) + str(dec_message[2])].append(address)
+                forward_echo(peer, neighbours, dec_message[1], dec_message[2],
+                             address)
+            elif dec_message[0] == 3:
+                if echo_log[str(dec_message[1]) + str(dec_message[2])][0] == 1:
+                    if dec_message[1] <= sequenceNumber and dec_message[2] == sensor_pos:
+                        window.writeln("Echo wave " + str(dec_message[1]) + " is Decided.")
+                        window.writeln("Payload " + str(dec_message[-1]))
+                        del echo_log[str(dec_message[1]) + str(dec_message[2])]
+                    else:
+                        father_addr = echo_log[str(dec_message[1]) + str(dec_message[2])][1]
+                        send_echo_reply(peer, dec_message[1], dec_message[2], father_addr)
+                else:
+                    echo_log[str(dec_message[1]) + str(dec_message[2])][0] -= 1
+
         line = window.getline()
         subParts = line.split(" ")
         if subParts[0] == "ping":
@@ -110,7 +131,10 @@ def main(mcast_addr,
             else:
                 window.writeln("Range need to be between 20 and 70(with steps of 10)") 
         elif subParts[0] == "echo":
-            sequenceNumber = initiateEcho(peer, neighbours, sensor_pos, sequenceNumber)
+            echo_log[str(sequenceNumber) + str(sensor_pos)] = []
+            echo_log[str(sequenceNumber) + str(sensor_pos)].append(len(neighbours))
+            sequenceNumber = initiateEcho(peer, neighbours, sensor_pos, sequenceNumber, window)
+            
 
         time.sleep(0.1)
         timeCounter += 1
@@ -119,21 +143,43 @@ def main(mcast_addr,
             getNeighbours(peer, mcast_addr, sensor_pos, sensor_range)
             timeCounter = 0
 
-def initiateEcho(peer, neighbours, sensor_pos, sequenceNumber):
-    for neighbour in neighbours:
-        message = message_encode(2, sequenceNumber, sensor_pos, neighbour[1], 0, 0, 0)
-        peer.sendto(message, neighbour[0])
-    sequenceNumber += 1
-    return sequenceNumber
+
+
 
 def getDistance(pos1, pos2):
-    return np.sqrt(np.power(pos1[0] - pos2[0], 2) + np.power(pos1[1] - pos2[1], 2))
+    return np.sqrt(np.power(pos1[0] - pos2[0], 2) + np.power(pos1[1] - pos2[1],
+                                                             2))
+
 
 def getNeighbours(peer, mcast_addr, sPos, sRange):
-    enc_message = message_encode(0, 0, sPos, (0,0), 0, sRange, 0)
+    enc_message = message_encode(0, 0, sPos, (0, 0), 0, sRange, 0)
     peer.sendto(enc_message, mcast_addr)
         
 
+def initiateEcho(peer, neighbours, sensor_pos, sequenceNumber, window):
+    if neighbours == []:
+        window.writeln("You have no neighbours to send the echo to")
+    else:
+        for neighbour in neighbours:
+            message = message_encode(2, sequenceNumber, sensor_pos, (0, 0),
+                                     0, 0, 0)
+            peer.sendto(message, neighbour[0])
+        sequenceNumber += 1
+    return sequenceNumber
+
+
+def forward_echo(peer, neighbours, init_seq, init_pos, father_addr):
+    for neighbour in neighbours:
+        if neighbour[0] != father_addr:
+            message = message_encode(2, init_seq, init_pos, (0, 0), 0, 0, 0)
+            peer.sendto(message, neighbour[0])
+
+
+def send_echo_reply(peer, init_seq, init_pos, father_addr):
+    message = message_encode(3, init_seq, init_pos, (0, 0), 0, 0, 0)
+    peer.sendto(message, father_addr)
+
+    
 # -- program entry point --
 if __name__ == '__main__':
     import argparse
