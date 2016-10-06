@@ -59,7 +59,7 @@ def main(mcast_addr,
     window.writeln('my position is (%s, %s)' % sensor_pos)
     window.writeln('my sensor value is %s' % sensor_val)
 
-    sendNeighbourPing(peer, mcast_addr, sensor_pos, sensor_range)
+    getNeighbours(peer, mcast_addr, sensor_pos, sensor_range)
 
     neighbours = []
     timeCounter = 0
@@ -85,39 +85,48 @@ def main(mcast_addr,
                 neighbours.append([address, dec_message[3]])
         line = window.getline()
         subParts = line.split(" ")
-        if subParts[0] == "move":
+        if subParts[0] == "ping":
+            neighbours = []
+            getNeighbours(peer, mcast_addr, sensor_pos, sensor_range)
+        elif subParts[0] == "move":
             sensor_pos = random_position(grid_size)
             window.writeln('my new position is (%s, %s)' % sensor_pos)
             neighbours = []
-            sendNeighbourPing(peer, mcast_addr, sensor_pos, sensor_range)
+            getNeighbours(peer, mcast_addr, sensor_pos, sensor_range)
         elif subParts[0] == "list":
             if neighbours == []:
                 window.writeln("You have no known neighbours")
             else:
                 for neighbour in neighbours:
-                    window.writeln("Ip: " + str(neighbour[0]))
-                    window.writeln("Port: " + str(neighbour[1]))
+                    window.writeln("Ip: " + str(neighbour[0][0]))
+                    window.writeln("Port: " + str(neighbour[0][1]))
                     window.writeln("")
         elif subParts[0] == "set":
             if int(subParts[1]) >= 20 and int(subParts[1]) <= 70 and (int(subParts[1]) % 10) == 0:
                 sensor_range = int(subParts[1])
                 neighbours = []
-                sendNeighbourPing(peer, mcast_addr, sensor_pos, sensor_range)
+                getNeighbours(peer, mcast_addr, sensor_pos, sensor_range)
             else:
                 window.writeln("Range need to be between 20 and 70(with steps of 10)") 
+        elif subParts[0] == "echo":
+            initiateEcho(peer, neighbours, sensor_pos, sensor_range)
 
         time.sleep(0.1)
         timeCounter += 1
         if timeCounter == REFRESHNEIGHBOUR:
             neighbours = []
-            sendNeighbourPing(peer, mcast_addr, sensor_pos, sensor_range)
+            getNeighbours(peer, mcast_addr, sensor_pos, sensor_range)
             timeCounter = 0
 
+def initiateEcho(peer, neighbours, sensor_pos, sensor_range):
+    for neighbour in neighbours:
+        message = message_encode(2, 0, sensor_pos, neighbour[1], 0, 0, 0)
+        peer.sendto(message, neighbour[0])
 
 def getDistance(pos1, pos2):
     return np.sqrt(np.power(pos1[0] - pos2[0], 2) + np.power(pos1[1] - pos2[1], 2))
 
-def sendNeighbourPing(peer, mcast_addr, sPos, sRange):
+def getNeighbours(peer, mcast_addr, sPos, sRange):
     enc_message = message_encode(0, 0, sPos, (0,0), 0, sRange, 0)
     peer.sendto(enc_message, mcast_addr)
         
