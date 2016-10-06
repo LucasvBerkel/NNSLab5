@@ -62,6 +62,8 @@ def main(mcast_addr,
     sendNeighbourPing(peer, mcast_addr, sensor_pos, sensor_range)
 
     neighbours = []
+    timeCounter = 0
+    REFRESHNEIGHBOUR = 50
     # -- This is the event loop. --
     while window.update():
         [rlist, wlist, xlist] = select.select([mcast, peer], [], [], 0)
@@ -105,6 +107,12 @@ def main(mcast_addr,
                 window.writeln("Range need to be between 20 and 70(with steps of 10)") 
 
         time.sleep(0.1)
+        timeCounter += 1
+        if timeCounter == REFRESHNEIGHBOUR:
+            neighbours = []
+            sendNeighbourPing(peer, mcast_addr, sensor_pos, sensor_range)
+            timeCounter = 0
+
 
 def getDistance(pos1, pos2):
     return np.sqrt(np.power(pos1[0] - pos2[0], 2) + np.power(pos1[1] - pos2[1], 2))
