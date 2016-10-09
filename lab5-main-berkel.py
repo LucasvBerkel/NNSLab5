@@ -75,77 +75,87 @@ def main(mcast_addr,
         for neighbor_socket in rlist:
             data, address = neighbor_socket.recvfrom(512)
             dec_message = message_decode(data)
-#            print dec_message
-            if dec_message[0] == 0:
-                pos_init = dec_message[2]
+
+            messType = dec_message[0]
+            sequence = dec_message[1]
+            initPos = dec_message[2]
+            neighPos = dec_message[3]
+            operation = dec_message[4]
+            capability = dec_message[5]
+            payload = dec_message[6]
+            
+            if messType == 0:
+                pos_init = initPos
                 distance = getDistance(pos_init, sensor.pos)
                 if distance == 0:
                     continue
-                elif distance < dec_message[5]:
+                elif distance < capability:
                     enc_message = message_encode(1, 0, pos_init, sensor.pos)
                     peer.sendto(enc_message, address)
-            elif dec_message[0] == 1:
-                neighbours.append([address, dec_message[3]])
-            elif dec_message[0] == 2:
+            elif messType == 1:
+                neighbours.append([address, neighPos])
+            elif messType == 2:
+                keyLog = str(sequence) + str(initPos)
                 window.writeln(str(dec_message))
-                if echo_log.get(str(dec_message[1]) + str(dec_message[2])) != None:
-                    send_echo_reply(peer, dec_message[1], dec_message[2], address, dec_message[4], dec_message[-1], 0, dec_message[5])
+                if echo_log.get(keyLog) != None:
+                    send_echo_reply(peer, sequence, initPos, address, operation, payload, 0, capability)
                 elif len(neighbours) == 1:
-                    send_echo_reply(peer, dec_message[1], dec_message[2], address, dec_message[4], dec_message[-1], 1, dec_message[5])
+                    send_echo_reply(peer, sequence, initPos, address, operation, payload, 1, capability)
                 else:
-                    echo_log[str(dec_message[1]) + str(dec_message[2])] = []
-                    echo_log[str(dec_message[1]) + str(dec_message[2])].append(len(neighbours) - 1)
-                    opcode = dec_message[4]
+                    echo_log[keyLog] = []
+                    echo_log[keyLog].append(len(neighbours) - 1)
+                    opcode = operation
                     if opcode == 3 or opcode == 4:
-                        echo_log[str(dec_message[1]) + str(dec_message[2])].append(sensor.val)
+                        echo_log[keyLog].append(sensor.val)
                     else:
-                        echo_log[str(dec_message[1]) + str(dec_message[2])].append(0)
-                    echo_log[str(dec_message[1]) + str(dec_message[2])].append(address)
-                    forward_echo(peer, neighbours, dec_message[1], dec_message[2], dec_message[4],
-                                 address, dec_message[6], dec_message[5])
-            elif dec_message[0] == 3:
+                        echo_log[keyLog].append(0)
+                    echo_log[keyLog].append(address)
+                    forward_echo(peer, neighbours, sequence, initPos, operation,
+                                 address, payload, capability)
+            elif messType == 3:
                 window.writeln(str(dec_message))
-                if echo_log[str(dec_message[1]) + str(dec_message[2])][0] == 1:
-                    if dec_message[1] <= sequenceNumber and dec_message[2] == sensor.pos:
-                        window.writeln("Echo wave " + str(dec_message[1]) + " is decided.")
-                        if dec_message[4] == 0:
-                            window.writeln("Payload " + str(dec_message[-1]))
-                        elif dec_message[4] == 1:
-                            window.writeln("Size network is " + str(dec_message[-1] + echo_log[str(dec_message[1]) + str(dec_message[2])][1] + 1))
-                        elif dec_message[4] == 2:
-                            window.writeln("The sum of values is " + str(dec_message[-1] + echo_log[str(dec_message[1]) + str(dec_message[2])][1] + sensor.val))
-                        elif dec_message[4] == 3:
-                            if echo_log[str(dec_message[1]) + str(dec_message[2])][1] > dec_message[-1]:
-                                echo_log[str(dec_message[1]) + str(dec_message[2])][1] = dec_message[-1]
-                            window.writeln("The minimum value of the netwerk is " + str(echo_log[str(dec_message[1]) + str(dec_message[2])][1]))
-                        elif dec_message[4] == 4:
-                            if echo_log[str(dec_message[1]) + str(dec_message[2])][1] < dec_message[-1]:
-                                echo_log[str(dec_message[1]) + str(dec_message[2])][1] = dec_message[-1]
-                            window.writeln("The maximum value of the netwerk is " + str(echo_log[str(dec_message[1]) + str(dec_message[2])][1]))
-                        elif dec_message[4] == 5:
-                            window.writeln("Numbers of sensors with same value is " + str(dec_message[-1] + echo_log[str(dec_message[1]) + str(dec_message[2])][1] + 1))
+                messLog = echo_log[str(sequence) + str(initPos)]
+                if messLog[0] == 1:
+                    if sequence <= sequenceNumber and initPos == sensor.pos:
+                        window.writeln("Echo wave " + str(sequence) + " is decided.")
+                        if operation == 0:
+                            window.writeln("Payload " + str(payload))
+                        elif operation == 1:
+                            window.writeln("Size network is " + str(payload + messLog[1] + 1))
+                        elif operation == 2:
+                            window.writeln("The sum of values is " + str(payload + messLog[1] + sensor.val))
+                        elif operation == 3:
+                            if messLog[1] > payload:
+                                messLog[1] = payload
+                            window.writeln("The minimum value of the netwerk is " + str(messLog[1]))
+                        elif operation == 4:
+                            if messLog[1] < payload:
+                                messLog[1] = payload
+                            window.writeln("The maximum value of the netwerk is " + str(messLog[1]))
+                        elif operation == 5:
+                            window.writeln("Numbers of sensors with same value is " + str(payload + messLog[1] + 1))
                     else:
-                        father_addr = echo_log[str(dec_message[1]) + str(dec_message[2])][2]
+                        father_addr = messLog[2]
                         op_list = [1, 2, 5]
-                        if dec_message[4] in op_list:
-                            send_echo_reply(peer, dec_message[1], dec_message[2], father_addr, dec_message[4], echo_log[str(dec_message[1]) + str(dec_message[2])][1] + dec_message[-1], 2, dec_message[5])
-                        elif dec_message[4] == 3:
-                            if echo_log[str(dec_message[1]) + str(dec_message[2])][1] > dec_message[-1]:
-                                echo_log[str(dec_message[1]) + str(dec_message[2])][1] = dec_message[-1]
-                            send_echo_reply(peer, dec_message[1], dec_message[2], father_addr, dec_message[4], echo_log[str(dec_message[1]) + str(dec_message[2])][1], 2, dec_message[5])
-                        elif dec_message[4] == 4:
-                            if echo_log[str(dec_message[1]) + str(dec_message[2])][1] < dec_message[-1]:
-                                echo_log[str(dec_message[1]) + str(dec_message[2])][1] = dec_message[-1]
-                            send_echo_reply(peer, dec_message[1], dec_message[2], father_addr, dec_message[4], echo_log[str(dec_message[1]) + str(dec_message[2])][1], 2, dec_message[5])
-                    del echo_log[str(dec_message[1]) + str(dec_message[2])]
+                        if operation in op_list:
+                            send_echo_reply(peer, sequence, initPos, father_addr, operation, messLog[1] + payload, 2, capability)
+                        elif operation == 3:
+                            if messLog[1] > payload:
+                                messLog[1] = payload
+                            send_echo_reply(peer, sequence, initPos, father_addr, operation, messLog[1], 2, capability)
+                        elif operation == 4:
+                            if messLog[1] < payload:
+                                messLog[1] = payload
+                            send_echo_reply(peer, sequence, initPos, father_addr, operation, messLog[1], 2, capability)
+                    del messLog
                 else:
-                    echo_log[str(dec_message[1]) + str(dec_message[2])][0] -= 1
-                    if dec_message[4] == 1 or dec_message[4] == 2 or dec_message[4] == 5:
-                        echo_log[str(dec_message[1]) + str(dec_message[2])][1] += dec_message[-1]
-                    elif dec_message[4] == 3 and echo_log[str(dec_message[1]) + str(dec_message[2])][1] > dec_message[-1]:
-                        echo_log[str(dec_message[1]) + str(dec_message[2])][1] = dec_message[-1]
-                    elif dec_message[4] == 4 and echo_log[str(dec_message[1]) + str(dec_message[2])][1] < dec_message[-1]:
-                        echo_log[str(dec_message[1]) + str(dec_message[2])][1] = dec_message[-1]
+                    messLog[0] -= 1
+                    if operation == 1 or operation == 2 or operation == 5:
+                        messLog[1] += payload
+                    elif operation == 3 and messLog[1] > payload:
+                        messLog[1] = payload
+                    elif operation == 4 and messLog[1] < payload:
+                        messLog[1] = payload
                         
 
         line = window.getline()
