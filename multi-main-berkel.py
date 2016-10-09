@@ -10,24 +10,27 @@ def main(nodes, r, steps):
     # Store processes.
     processes = []
 
+    processes.append(subprocess.Popen(['python', 'pipesensor.py'],
+                                      stdout=subprocess.PIPE,
+                                      stdin=subprocess.PIPE))
+
+    processes[0].stdin.flush()
+
     for node in range(nodes):
-        
+        print("in loop")
         # Open a process.
-        p = subprocess.Popen(['python', 'pipe-example.py'],
-                             stdout=subprocess.PIPE,
-                             stdin=subprocess.PIPE)
-        processes.append(node)
-
+        processes.append(subprocess.Popen(['python', 'pipesensor.py'],
+                                          stdout=subprocess.PIPE,
+                                          stdin=subprocess.PIPE))
         # Send our sensor range.
-        p.stdin.write("%s\n" % r)
-        p.stdin.flush()
-
+#        p.stdin.write("%s\n" % r)
+        processes[node + 1].stdin.flush()
         # Read the output of pipe-example.py
         string = ""
         while True:
             # Read a single character.
-            char = p.stdout.read(1)
 
+            char = processes[node + 1].stdout.read(1)
             # If the character is a newline, we have our data!
             if char == "\n":
                 break

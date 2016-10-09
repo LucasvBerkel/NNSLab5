@@ -64,7 +64,6 @@ def main(mcast_addr,
     neighbours = []
     timeCounter = 0
     sequenceNumber = 0
-    REFRESHNEIGHBOUR = 50
     echo_log = {}
     operation_list = ["echo", "size", "sum", "min", "max", "same"]
     # -- This is the event loop. --
@@ -195,7 +194,7 @@ def main(mcast_addr,
             sequenceNumber = initiateEcho(peer, neighbours, sequenceNumber, window, opcode, sensor.val)
         time.sleep(0.1)
         timeCounter += 1
-        if timeCounter == REFRESHNEIGHBOUR:
+        if timeCounter == ping_period:
             neighbours = []
             getNeighbours(peer, mcast_addr)
             timeCounter = 0
@@ -288,7 +287,7 @@ if __name__ == '__main__':
     p.add_argument('--range', help='sensor range', default=50, type=int)
     p.add_argument('--value', help='sensor value', default=-1, type=int)
     p.add_argument('--period', help='period between autopings (0=off)',
-                   default=5, type=int)
+                   default=50, type=int)
     args = p.parse_args(sys.argv[1:])
     if args.pos:
         pos = tuple(int(n) for n in args.pos.split(',')[:2])
