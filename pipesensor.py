@@ -149,7 +149,6 @@ def main(mcast_addr,
         for neighbor_socket in rlist:
             data, address = neighbor_socket.recvfrom(512)
             dec_message = message_decode(data)
-
             messType = dec_message[0]
             sequence = dec_message[1]
             initPos = dec_message[2]
@@ -191,23 +190,23 @@ def main(mcast_addr,
                     if sequence <= sequenceNumber and initPos == sensor.pos:
 
                         if operation == 1:
-                            print("networksize " + str(payload + messLog[1] + 1) + "\n")
+                            print("networksize " + str(payload + messLog[1] + 1))
                             indexCommand += 1
                         elif operation == 2:
-                            print("valuesum " + str(payload + messLog[1] + sensor.val) + "\n")
+                            print("valuesum " + str(payload + messLog[1] + sensor.val))
                             indexCommand += 1
                         elif operation == 3:
                             if messLog[1] > payload:
                                 messLog[1] = payload
-                            print("minimumval " + str(messLog[1]) + "\n")
+                            print("minimumval " + str(messLog[1]))
                             indexCommand += 1
                         elif operation == 4:
                             if messLog[1] < payload:
                                 messLog[1] = payload
-                            print("maximumval " + str(messLog[1]) + "\n")
+                            print("maximumval " + str(messLog[1]))
                             indexCommand += 1
                         elif operation == 5:
-                            print("sameval " + str(payload + messLog[1] + 1) + "\n")
+                            print("sameval " + str(payload + messLog[1] + 1))
                             indexCommand += 1
                     else:
                         father_addr = messLog[2]
@@ -250,8 +249,11 @@ def main(mcast_addr,
             getNeighbours(peer, mcast_addr)
             timeCounter = 0
 
-                
 
+def output_to_file(output_string, filename):
+    f = open(filename, 'a')
+    f.write(output_string)
+    f.close()
 
 
 import argparse
