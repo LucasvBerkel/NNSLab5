@@ -143,7 +143,6 @@ def main(mcast_addr,
     commandList = ["size", "min", "max", ""]
     indexCommand = 0
     counter = 0
-    print(sensor.pos)
     while True:
         [rlist, wlist, xlist] = select.select([mcast, peer], [], [], 0)
         # add neighbors to list
@@ -158,8 +157,6 @@ def main(mcast_addr,
             operation = dec_message[4]
             capability = dec_message[5]
             payload = dec_message[6]
-            if messType != 0 and messType != 1:
-                print(dec_message)
             if messType == 0:
                 pos_init = initPos
                 distance = getDistance(pos_init, sensor.pos)
@@ -185,7 +182,7 @@ def main(mcast_addr,
                         echo_log[keyLog].append(sensor.val)
                     else:
                         echo_log[keyLog].append(0)
-                        echo_log[keyLog].append(address)
+                    echo_log[keyLog].append(address)
                     forward_echo(peer, neighbours, sequence, initPos, operation,
                                  address, payload, capability)
             elif messType == 3:
@@ -220,11 +217,11 @@ def main(mcast_addr,
                         elif operation == 3:
                             if messLog[1] > payload:
                                 messLog[1] = payload
-                                send_echo_reply(peer, sequence, initPos, father_addr, operation, messLog[1], 2, capability)
+                            send_echo_reply(peer, sequence, initPos, father_addr, operation, messLog[1], 2, capability)
                         elif operation == 4:
                             if messLog[1] < payload:
                                 messLog[1] = payload
-                                send_echo_reply(peer, sequence, initPos, father_addr, operation, messLog[1], 2, capability)
+                            send_echo_reply(peer, sequence, initPos, father_addr, operation, messLog[1], 2, capability)
                     del messLog
                 else:
                     messLog[0] -= 1
@@ -234,10 +231,9 @@ def main(mcast_addr,
                         messLog[1] = payload
                     elif operation == 4 and messLog[1] < payload:
                         messLog[1] = payload
-        if (counter % 300) == 0 and timeCounter > 0:
+        if (counter % 75) == 0 and timeCounter > 0:
             command = commandList[indexCommand]
             if command in operation_list:
-                print("Command sent " + command)
                 opcode = operation_list.index(command)
                 echo_log[str(sequenceNumber) + str(sensor.pos)] = []
                 echo_log[str(sequenceNumber) + str(sensor.pos)].append(len(neighbours))
@@ -266,7 +262,7 @@ pos = random_position(100)
 value = randint(0, 100)
 mcast_addr = ('224.1.1.1', 50100)
 sensor = sensor(pos, value, args.range)
-period = 200
+period = 50
 grid = 100
 main(mcast_addr, pos, args.range, value, grid, period)
 
