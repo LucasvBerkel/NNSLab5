@@ -6,7 +6,11 @@ import subprocess
 import time
 
 def get_file_length(file_name):
-    return sum(1 for line in open(file_name))
+    counter = 0
+    with open(file_name) as f:
+        for line in f:
+            counter = counter + 1
+    return counter
 
 def main(nodes, r, steps):
 
@@ -21,9 +25,11 @@ def main(nodes, r, steps):
                                           stdin=subprocess.PIPE))
         # Send our sensor range.
         # Read the output of pipe-example.py
-        while get_file_length("max.txt") != (node+1):
+        while True:
             print get_file_length("max.txt")
             time.sleep(0.1)
+            if get_file_length("max.txt") > (node+1):
+                break
 
         print "Received something from node %d" % (node)
 
