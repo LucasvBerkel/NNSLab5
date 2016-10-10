@@ -191,23 +191,28 @@ def main(mcast_addr,
 
                         if operation == 1:
                             print("networksize " + str(payload + messLog[1] + 1))
-                            indexCommand += 1
+                            output_to_file("networksize " + str(payload + messLog[1] + 1) + "\n", "size.txt")
+                            indexCommand = 1
                         elif operation == 2:
                             print("valuesum " + str(payload + messLog[1] + sensor.val))
-                            indexCommand += 1
+                            output_to_file("valuesum " + str(payload + messLog[1] + sensor.val) + "\n", "sum.txt")
+                            # indexCommand += 1
                         elif operation == 3:
                             if messLog[1] > payload:
                                 messLog[1] = payload
+                            output_to_file("minimumval " + str(messLog[1]) + "\n", "min.txt")
                             print("minimumval " + str(messLog[1]))
-                            indexCommand += 1
+                            indexCommand = 2
                         elif operation == 4:
                             if messLog[1] < payload:
                                 messLog[1] = payload
                             print("maximumval " + str(messLog[1]))
-                            indexCommand += 1
+                            output_to_file("maximumval " + str(messLog[1] + 1) + "\n", "max.txt")
+                            # indexCommand += 1
                         elif operation == 5:
                             print("sameval " + str(payload + messLog[1] + 1))
-                            indexCommand += 1
+                            output_to_file("sameval " + str(payload + messLog[1] + 1) + "\n", "same.txt")
+                            # indexCommand += 1
                     else:
                         father_addr = messLog[2]
                         op_list = [1, 2, 5]

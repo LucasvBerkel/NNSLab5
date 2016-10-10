@@ -3,7 +3,10 @@
 # STUDENT ID:
 
 import subprocess
+import time
 
+def get_file_length(file_name):
+    return sum(1 for line in open(file_name))
 
 def main(nodes, r, steps):
 
@@ -11,31 +14,18 @@ def main(nodes, r, steps):
     processes = []
 
     for node in range(nodes):
-        print("in loop")
 
         # Open a process.
         processes.append(subprocess.Popen(['python', 'pipesensor.py'],
                                           stdout=subprocess.PIPE,
                                           stdin=subprocess.PIPE))
         # Send our sensor range.
-#        p.stdin.write("%s\n" % r)
-        processes[node].stdin.flush()
         # Read the output of pipe-example.py
-        string = ""
+        while get_file_length("max.txt") != (node+1):
+            print get_file_length("max.txt")
+            time.sleep(0.1)
 
-        while True:
-            # Read a single character.
-
-            char = processes[node].stdout.read(1)
-
-            # If the character is a newline, we have our data!
-            if char == "\n":
-                break
-
-            # Append the character to the string.
-            string += char
-
-        print "Received something from node %d: %s" % (node, string)
+        print "Received something from node %d" % (node)
 
 if __name__ == '__main__':
     import argparse
