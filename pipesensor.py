@@ -186,8 +186,8 @@ def main(mcast_addr,
                     else:
                         echo_log[keyLog].append(0)
                         echo_log[keyLog].append(address)
-                        forward_echo(peer, neighbours, sequence, initPos, operation,
-                                     address, payload, capability)
+                    forward_echo(peer, neighbours, sequence, initPos, operation,
+                                 address, payload, capability)
             elif messType == 3:
                 messLog = echo_log[str(sequence) + str(initPos)]
                 if messLog[0] == 1 or messLog[0] == 0:
