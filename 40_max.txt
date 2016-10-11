@@ -1,0 +1,21 @@
+maximumval 44
+maximumval 43
+maximumval 3
+maximumval 73
+maximumval 43.0
+maximumval 88
+maximumval 88.0
+maximumval 73.0
+maximumval 88.0
+maximumval 88.0
+maximumval 88.0
+maximumval 88.0
+maximumval 88.0
+maximumval 88.0
+maximumval 88.0
+maximumval 88
+maximumval 88.0
+maximumval 88.0
+maximumval 88.0
+maximumval 88.0
+

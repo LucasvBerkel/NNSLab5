@@ -1,6 +1,6 @@
 ## Netwerken en Systeembeveiliging Lab 5 - Distributed Sensor Network
-## NAME:
-## STUDENT ID:
+## NAME: Julian Main, Lucas van Berkel
+## STUDENT ID: ... , 10747958
 import sys
 import struct
 import select

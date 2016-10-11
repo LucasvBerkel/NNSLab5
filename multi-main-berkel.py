@@ -1,6 +1,6 @@
 # Netwerken en Systeembeveiliging Lab 5 - Distributed Sensor Network
-# NAME:
-# STUDENT ID:
+# NAME: Julian Main, Lucas van Berkel
+# STUDENT ID: ..., 10747958
 
 import subprocess
 import time
@@ -27,15 +27,15 @@ def main(nodes, r, steps):
     for node in range(nodes):
 
         # Open a process.
-        processes.append(subprocess.Popen(['python', 'pipesensor.py'],
+        processes.append(subprocess.Popen(['python', 'pipesensor.py', '--range', str(r)],
                                           stdout=subprocess.PIPE,
                                           stdin=subprocess.PIPE))
         # Send our sensor range.
         # Read the output of pipe-example.py
         while True:
-            print get_file_length("max.txt")
+            # print get_file_length(str(r) + "_max.txt")
             time.sleep(0.1)
-            if get_file_length("max.txt") > node:
+            if get_file_length(str(r) + "_max.txt") > node:
                 break
         print "Received something from node %d" % (node)
 
