@@ -27,7 +27,8 @@ def main(nodes, r, steps):
     for node in range(nodes):
 
         # Open a process.
-        processes.append(subprocess.Popen(['python', 'pipesensor.py', '--range', str(r)],
+        processes.append(subprocess.Popen(['python', 'pipesensor.py',
+                                           '--range', str(r)],
                                           stdout=subprocess.PIPE,
                                           stdin=subprocess.PIPE))
         # Send our sensor range.
